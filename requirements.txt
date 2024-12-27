@@ -1,0 +1,7 @@
+streamlit
+streamlit-lottie
+scikit-learn
+matplotlib
+fuzzywuzzy
+pandas
+numpy
