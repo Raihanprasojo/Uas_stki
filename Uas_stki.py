@@ -46,35 +46,8 @@ st.markdown(
 )
 
 # Langkah 2: Memuat dataset
-file_path = "tmdb_5000_movies.csv"
-
-# Memeriksa apakah file tersedia di lokasi
-if os.path.exists(file_path):
-    try:
-        movies = pd.read_csv(file_path)
-        st.write(f"Dataset berhasil dimuat. Jumlah baris: {len(movies)}")
-    except pd.errors.EmptyDataError:
-        st.error("File dataset kosong. Harap unggah file yang valid.")
-        st.stop()
-    except Exception as e:
-        st.error(f"Gagal membaca dataset: {str(e)}")
-        st.stop()
-else:
-    # Menggunakan file uploader jika file tidak ditemukan
-    uploaded_file = st.file_uploader("Unggah file dataset CSV", type=["csv"])
-    if uploaded_file is not None:
-        try:
-            movies = pd.read_csv(uploaded_file)
-            st.write(f"Dataset berhasil dimuat. Jumlah baris: {len(movies)}")
-        except pd.errors.EmptyDataError:
-            st.error("File yang diunggah kosong. Harap unggah file yang valid.")
-            st.stop()
-        except Exception as e:
-            st.error(f"Gagal membaca dataset yang diunggah: {str(e)}")
-            st.stop()
-    else:
-        st.error("Dataset tidak ditemukan. Harap unggah file dataset atau pastikan path file benar.")
-        st.stop()
+file_path = "C:/Users/rehan/Documents/Uas STKI/tmdb_5000_movies.csv"
+movies = pd.read_csv(file_path)
 
 # Langkah 3: Memilih kolom yang relevan
 movies = movies[['title', 'overview', 'genres', 'vote_average', 'vote_count']]
@@ -107,10 +80,13 @@ movies['normalized_vote_count'] = scaler.fit_transform(movies[['vote_count']])
 
 # Langkah 9: Menggabungkan Skor
 def calculate_final_score(vote_weight, count_weight):
-    movies['final_score'] = (
-        vote_weight * movies['normalized_vote_average'] +
-        count_weight * movies['normalized_vote_count']
-    )
+    if 'normalized_vote_average' in movies.columns and 'normalized_vote_count' in movies.columns:
+        movies['final_score'] = (
+            vote_weight * movies['normalized_vote_average'] +
+            count_weight * movies['normalized_vote_count']
+        )
+    else:
+        st.error("Kolom 'normalized_vote_average' atau 'normalized_vote_count' tidak ditemukan. Periksa proses normalisasi.")
 
 # Pengaturan Bobot
 st.subheader("Pengaturan Bobot")
@@ -123,14 +99,24 @@ st.markdown(
 
 vote_weight = st.slider("Bobot Skor Review (Vote Average)", 0.0, 1.0, 0.7)
 count_weight = 1.0 - vote_weight
+st.slider("Bobot Popularitas (Vote Count)", 0.0, 1.0, count_weight)
+
+if 'vote_weight' not in st.session_state:
+    st.session_state.vote_weight = vote_weight
+if 'count_weight' not in st.session_state:
+    st.session_state.count_weight = count_weight
 
 if st.button("Terapkan Bobot"):
-    calculate_final_score(vote_weight, count_weight)
-    st.success(f"Bobot telah diterapkan: \n- Bobot Skor Review: {vote_weight}\n- Bobot Popularitas: {count_weight}")
+    st.session_state.vote_weight = vote_weight
+    st.session_state.count_weight = count_weight
+    calculate_final_score(st.session_state.vote_weight, st.session_state.count_weight)
+    st.success(f"Bobot telah diterapkan: \n- Bobot Skor Review: {st.session_state.vote_weight}\n- Bobot Popularitas: {st.session_state.count_weight}")
 
 # Fungsi Rekomendasi
 def recommend(title, cosine_sim=cosine_sim, movies=movies, genre_filter=None):
     try:
+        if 'final_score' not in movies.columns:
+            calculate_final_score(st.session_state.vote_weight, st.session_state.count_weight)
         idx = movies[movies['title'] == title].index[0]
         sim_scores = list(enumerate(cosine_sim[idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
@@ -147,6 +133,16 @@ def recommend(title, cosine_sim=cosine_sim, movies=movies, genre_filter=None):
         st.error("Film tidak ditemukan dalam dataset. Pastikan judul yang dimasukkan benar.")
         return pd.DataFrame()
 
+# Fungsi Menampilkan Film Terbaik
+def get_top_movies(movies, genre_filter=None, n=30):
+    if 'final_score' not in movies.columns:
+        calculate_final_score(st.session_state.vote_weight, st.session_state.count_weight)
+    top_movies = movies
+    if genre_filter and genre_filter.strip():
+        genre_filter = genre_filter.lower()
+        top_movies = top_movies[top_movies['genres'].str.contains(genre_filter, case=False, na=False)]
+    return top_movies.sort_values(by='final_score', ascending=False).head(n)
+
 # Sidebar
 with st.sidebar:
     st.markdown("Navigasi", unsafe_allow_html=True)
@@ -162,3 +158,14 @@ if tab_selection == "Daftar Film":
         if genre_filter else movies
     )
     st.write(filtered_movies['title'].tolist())
+
+if tab_selection == "Rekomendasi":
+    st.subheader(f"Top 30 Film Terbaik (Genre: {selected_genre}):")
+    st.dataframe(get_top_movies(movies, genre_filter=genre_filter, n=30))
+
+if tab_selection == "Tentang":
+    st.write("Aplikasi ini adalah platform cerdas yang memanfaatkan teknologi Natural Language Processing (NLP) dengan model Transformer untuk memberikan rekomendasi film yang akurat dan relevan. Dengan memahami preferensi pengguna melalui analisis data teks, seperti ulasan, deskripsi film, dan komentar pengguna, aplikasi ini mampu menghasilkan rekomendasi yang benar-benar personal dan dinamis.")
+
+if tab_selection == "Informasi Dataset":
+    st.subheader("Statistik Dataset")
+    st.write(f"Jumlah Film: {len(movies)}")
