@@ -46,7 +46,7 @@ st.markdown(
 )
 
 # Langkah 2: Memuat dataset
-file_path = "C:/Users/rehan/Documents/Uas STKI/tmdb_5000_movies.csv"
+file_path = "tmdb_5000_movies.csv"
 
 if os.path.exists(file_path):
     movies = pd.read_csv(file_path)
