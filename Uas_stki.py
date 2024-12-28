@@ -48,17 +48,33 @@ st.markdown(
 # Langkah 2: Memuat dataset
 file_path = "tmdb_5000_movies.csv"
 
+# Memeriksa apakah file tersedia di lokasi
 if os.path.exists(file_path):
-    movies = pd.read_csv(file_path)
-elif st.file_uploader("Unggah file dataset CSV", type=["csv"]):
+    try:
+        movies = pd.read_csv(file_path)
+        st.write(f"Dataset berhasil dimuat. Jumlah baris: {len(movies)}")
+    except pd.errors.EmptyDataError:
+        st.error("File dataset kosong. Harap unggah file yang valid.")
+        st.stop()
+    except Exception as e:
+        st.error(f"Gagal membaca dataset: {str(e)}")
+        st.stop()
+else:
+    # Menggunakan file uploader jika file tidak ditemukan
     uploaded_file = st.file_uploader("Unggah file dataset CSV", type=["csv"])
     if uploaded_file is not None:
-        movies = pd.read_csv(uploaded_file)
+        try:
+            movies = pd.read_csv(uploaded_file)
+            st.write(f"Dataset berhasil dimuat. Jumlah baris: {len(movies)}")
+        except pd.errors.EmptyDataError:
+            st.error("File yang diunggah kosong. Harap unggah file yang valid.")
+            st.stop()
+        except Exception as e:
+            st.error(f"Gagal membaca dataset yang diunggah: {str(e)}")
+            st.stop()
     else:
-        st.error("Dataset tidak ditemukan. Harap unggah file dataset atau periksa path file.")
-else:
-    st.error(f"File tidak ditemukan di path: {file_path}. Pastikan file tersedia.")
-    st.stop()
+        st.error("Dataset tidak ditemukan. Harap unggah file dataset atau pastikan path file benar.")
+        st.stop()
 
 # Langkah 3: Memilih kolom yang relevan
 movies = movies[['title', 'overview', 'genres', 'vote_average', 'vote_count']]
@@ -131,14 +147,6 @@ def recommend(title, cosine_sim=cosine_sim, movies=movies, genre_filter=None):
         st.error("Film tidak ditemukan dalam dataset. Pastikan judul yang dimasukkan benar.")
         return pd.DataFrame()
 
-# Fungsi Menampilkan Film Terbaik
-def get_top_movies(movies, genre_filter=None, n=30):
-    top_movies = movies
-    if genre_filter and genre_filter.strip():
-        genre_filter = genre_filter.lower()
-        top_movies = top_movies[top_movies['genres'].str.contains(genre_filter, case=False, na=False)]
-    return top_movies.sort_values(by='final_score', ascending=False).head(n)
-
 # Sidebar
 with st.sidebar:
     st.markdown("Navigasi", unsafe_allow_html=True)
@@ -154,14 +162,3 @@ if tab_selection == "Daftar Film":
         if genre_filter else movies
     )
     st.write(filtered_movies['title'].tolist())
-
-if tab_selection == "Rekomendasi":
-    st.subheader(f"Top 30 Film Terbaik (Genre: {selected_genre}):")
-    st.dataframe(get_top_movies(movies, genre_filter=genre_filter, n=30))
-
-if tab_selection == "Tentang":
-    st.write("Aplikasi ini adalah platform cerdas yang memanfaatkan teknologi NLP untuk memberikan rekomendasi film yang akurat.")
-
-if tab_selection == "Informasi Dataset":
-    st.subheader("Statistik Dataset")
-    st.write(f"Jumlah Film: {len(movies)}")
