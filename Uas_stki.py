@@ -45,12 +45,12 @@ st.markdown(
 )
 
 # Langkah 2: Memuat dataset
-file_path = "C:/Users/rehan/Documents/Uas STKI/tmdb_5000_movies.csv"
-try:
-    movies = pd.read_csv(file_path)
-except FileNotFoundError:
-    st.error("Dataset tidak ditemukan. Pastikan file tersedia di jalur yang ditentukan.")
+file_path = "tmdb_5000_movies.csv"
+if not os.path.exists(file_path):
+    st.error("Dataset tidak ditemukan. Pastikan file tersedia di repositori GitHub yang sama.")
     st.stop()
+
+movies = pd.read_csv(file_path)
 
 # Langkah 3: Memilih kolom yang relevan
 movies = movies[['title', 'overview', 'genres', 'vote_average', 'vote_count']].dropna()
