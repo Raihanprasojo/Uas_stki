@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -46,9 +47,13 @@ st.markdown(
 
 # Langkah 2: Memuat dataset
 file_path = "tmdb_5000_movies.csv"
+
+# Mengecek keberadaan dataset
 if not os.path.exists(file_path):
-    st.error("Dataset tidak ditemukan. Pastikan file tersedia di repositori GitHub yang sama.")
+    st.error(f"Dataset tidak ditemukan. File `{file_path}` tidak ada di direktori.")
     st.stop()
+else:
+    st.success(f"Dataset ditemukan: `{file_path}`")
 
 movies = pd.read_csv(file_path)
 
