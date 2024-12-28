@@ -170,7 +170,7 @@ elif tab_selection == "Rekomendasi":
 
 # Tab: Tentang
 elif tab_selection == "Tentang":
-    st.write("Aplikasi ini memanfaatkan NLP untuk merekomendasikan film.")
+    st.write("Aplikasi ini adalah platform cerdas yang memanfaatkan teknologi Natural Language Processing (NLP) dengan model Transformer untuk memberikan rekomendasi film yang akurat dan relevan. Dengan memahami preferensi pengguna melalui analisis data teks, seperti ulasan, deskripsi film, dan komentar pengguna, aplikasi ini mampu menghasilkan rekomendasi yang benar-benar personal dan dinamis.")
 
 # Tab: Informasi Dataset
 elif tab_selection == "Informasi Dataset":
