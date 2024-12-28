@@ -5,6 +5,3 @@ matplotlib
 fuzzywuzzy
 pandas
 numpy
-altair
-python-Levenshtein
-request
