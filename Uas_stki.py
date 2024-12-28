@@ -88,10 +88,11 @@ movies['normalized_vote_count'] = scaler.fit_transform(movies[['vote_count']])
 
 # Langkah 9: Menggabungkan Skor
 def calculate_final_score(vote_weight, count_weight):
-    movies['final_score'] = (
-        vote_weight * movies['normalized_vote_average'] +
-        count_weight * movies['normalized_vote_count']
-    )
+    if 'final_score' not in movies.columns:
+        movies['final_score'] = (
+            vote_weight * movies['normalized_vote_average'] +
+            count_weight * movies['normalized_vote_count']
+        )
 
 # Pengaturan Bobot
 st.subheader("Pengaturan Bobot")
@@ -119,6 +120,7 @@ if st.button("Terapkan Bobot"):
 # Fungsi Rekomendasi
 def recommend(title, cosine_sim=cosine_sim, genre_filter=None):
     try:
+        calculate_final_score(vote_weight, count_weight)
         idx = movies[movies['title'] == title].index[0]
         sim_scores = list(enumerate(cosine_sim[idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:21]
@@ -156,13 +158,14 @@ with st.sidebar:
 # Tab: Daftar Film
 if tab_selection == "Daftar Film":
     st.subheader("Daftar Film yang Tersedia:")
+    title_input = st.text_input("Masukkan judul film untuk rekomendasi:", key='title_input')
     filtered_movies = movies if not genre_filter else movies[movies['genres_str'].str.contains(genre_filter, case=False)]
     st.dataframe(filtered_movies[['title', 'genres_str', 'vote_average', 'vote_count']])
 
 # Tab: Rekomendasi
 elif tab_selection == "Rekomendasi":
     st.subheader("Rekomendasi Film")
-    title_input = st.text_input("Masukkan judul film:")
+    title_input = st.session_state.get('title_input', '')
     if title_input:
         rekomendasi = recommend(title_input, genre_filter=genre_filter)
         if not rekomendasi.empty:
